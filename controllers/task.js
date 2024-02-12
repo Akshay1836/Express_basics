@@ -1,16 +1,21 @@
 const data = require("../data");
-const Task = require("../model/maindb");
+const Tasks = require("../model/maindb");
 
 //Retrieve all tasks (GET)
-const getData = (req, res) => {
-  res.status(200).send(data);
+const getData = async(req, res) => {
+  try{
+    const result=await Tasks.find({});
+    res.status(200).json({success:true,data:result});
+  }catch(error){
+    res.status(500).json("Internal error");
+  }
 };
 
 //Create a new task (POST )
 const sendData = async (req, res) => {
   try {
     if (req.body.name) {
-      const task = await Task.create(req.body);
+      const task = await Tasks.create(req.body);
       return res.status(201).json({ success: true, data: task });
     }
     return res.status(404).send("Resouce not found");
@@ -41,8 +46,8 @@ const sendData = async (req, res) => {
 //Retrieve a single task by ID (/tasks/:id)
 const gettask = async (req, res) => {
   try {
-    const { id } = req.params;
-    const result = data.find((data) => data.id == Number(id));
+    const { id:TaskID } = req.params;
+    const result=await Tasks.findOne({_id:TaskID});
     if (!result) {
       return res.status(404).send("Resource not found");
     }
@@ -54,28 +59,31 @@ const gettask = async (req, res) => {
 
 //Update a task by ID (/tasks/:id)
 
-const updatetask = (req, res) => {
-  const { id } = req.params;
-  const result = data.find((data) => data.id == id);
-  if (result) {
-    if (req.body.title) {
-      result.title = req.body.title;
+const updatetask = async(req, res) => {
+ try{
+  const { id:TaskID } = req.params;
+  const result =await Tasks.findOneAndUpdate({_id:TaskID},req.body,{new:true,runValidators:true});
+  if (!result) {
+      res.status(404).json("Resource not found...")
     }
     return res.status(201).json({ success: true, data: result });
-  }
-  res.status(404).send("Resource not found");
-};
+ }
+ catch(error){
+  res.status(500).json(error);
+ }
+}
+
 
 //delete a task by ID ( /tasks/:id)
 const deleteTask = async (req, res) => {
   try {
-    const { id } = req.params;
-    const task = data.find((data) => data.id === Number(id));
+    const { id:TaskID } = req.params;
+    const task =await Tasks.findOneAndDelete({_id:TaskID});
     if (!task) {
       return res.status(404).send("Resource not found");
     }
-    const delete_data = data.filter((data) => data.id !== Number(id));
-    res.status(200).json({ success: true, data: delete_data });
+    
+    res.status(200).json({ success: true, data: task });
   } catch (error) {
     res.status(500).send("Internal error");
   }
